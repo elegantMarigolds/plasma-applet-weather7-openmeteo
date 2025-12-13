@@ -72,6 +72,16 @@ PlasmoidItem {
     }
 
     Text {
+        text: weather.precipitationChance
+        font.family: fontFamily
+        font.pointSize: 10
+        color: "white"
+        opacity: 0.6
+        horizontalAlignment: Text.AlignRight
+        width: parent.width
+    }
+
+    Text {
       text: weather.currentCity
       font.family: fontFamily
       font.pointSize: 10
@@ -133,13 +143,13 @@ PlasmoidItem {
     anchors.bottom: footer.top
     layoutDirection: Qt.LeftToRight
     spacing: 24
-    anchors.bottomMargin: 10
+    anchors.bottomMargin: 15
 
     Repeater {
       model: weather.forecastList
       Rectangle {
         width: 94
-        height: 70
+        height: 90
         color: "transparent"
         RowLayout {
           anchors.fill: parent
@@ -170,11 +180,18 @@ PlasmoidItem {
               color: "white"
               opacity: 0.6
             }
+            Text {
+              text: modelData.precip
+              font.family: fontFamily
+              font.pointSize: 10
+              color: "#88ccff"  // Light blue for precipitation
+              opacity: 0.8
+            }
           }
           KSvg.SvgItem {
             Layout.preferredWidth: 48
             Layout.preferredHeight: 48
-            Layout.alignment: Qt.AlignRight | Qt.AlignBottom
+            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
             smooth: true
             antialiasing: true
             svg: KSvg.Svg {

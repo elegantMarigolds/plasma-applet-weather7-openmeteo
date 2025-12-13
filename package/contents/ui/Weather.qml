@@ -30,8 +30,9 @@ Item {
   property var skyconImages: {
     "UNKOWN": Qt.resolvedUrl("../images/skycons/sunny.svg"),
     "CLEAR_DAY": Qt.resolvedUrl("../images/skycons/sunny.svg"),
-    "CLEAR_NIGHT": Qt.resolvedUrl("../images/skycons/sunny.svg"),
+    "CLEAR_NIGHT": Qt.resolvedUrl("../images/skycons/clearNight.svg"),
     "PARTLY_CLOUDY_DAY": Qt.resolvedUrl("../images/skycons/cloudy.svg"),
+    "PARTLY_CLOUDY_NIGHT": Qt.resolvedUrl("../images/skycons/cloudyNight.svg"),
     "PARTLY_CLOUDY_NIGHT": Qt.resolvedUrl("../images/skycons/cloudy.svg"),
     "CLOUDY": Qt.resolvedUrl("../images/skycons/cloudy.svg"),
     "OVERCAST": Qt.resolvedUrl("../images/skycons/overcast.svg"),
@@ -77,12 +78,12 @@ Item {
   }
 
   property string scriptPath: Plasmoid.configuration.Command
-
+  property string precipitationChance: "--%"
   property string currentTemperature: "--°"
   property string currentRange: "H: --° L: --°"
   property string currentStatus: "UNKOWN"
   property string currentCity: Plasmoid.configuration.City
-  property string weatherSource: "Weather7"
+  property string weatherSource: "Wealth Beyond Measure, Muthsera"
   property string updateTime: i18nc("Updated at --:--", "Updated at --:--")
   property var forecastList: [
     { time: "-- AM", high: "--°", low: "--°", status: "CLOUDY" },
@@ -105,35 +106,91 @@ Item {
 
   function parseWeatherData(result) {
     try {
-      var json = JSON.parse(result)
+        var json = JSON.parse(result)
 
-      currentTemperature = Math.round(json.result.realtime.temperature) + "°"
-      currentStatus = json.result.realtime.skycon
+        currentTemperature = Math.round(json.result.realtime.temperature) + "°"
+        currentStatus = json.result.realtime.skycon
 
-      var daily = json.result.daily.temperature[0]
-      currentRange = "H: " + Math.round(daily.max) + "° L:" + Math.round(daily.min) + "°"
+        // Get precipitation chance
+        var precipChance = 0
+        if (json.result.realtime.precipitation &&
+            json.result.realtime.precipitation.local &&
+            json.result.realtime.precipitation.local.probability !== undefined) {
+            precipChance = Math.round(json.result.realtime.precipitation.local.probability)
+        }
+        precipitationChance = precipChance + "% chance of rain"
 
-      var temps = json.result.hourly.temperature
-      var skycons = json.result.hourly.skycon
-      var forecast = []
-      for (var i = 0; i < 3; ++i) {
-        var hour = temps[i]
-        var sky = skycons[i]
-        var time = formatHourAMPM(hour.datetime)
+        var daily = json.result.daily.temperature[0]
+        currentRange = "H: " + Math.round(daily.max) + "° L:" + Math.round(daily.min) + "°"
+
+        // FIXED: Correctly access hourly data
+        var temps = json.result.hourly.temperature
+        var skycons = json.result.hourly.skycon
+        var precipProbs = json.result.hourly.probability  // This is the array of precipitation chances
+
+        var now = new Date()
+        var currentHourIndex = -1
+
+        // Try to find a matching hour in the data (round down to the hour)
+        var targetHourStr = now.getFullYear() + '-' +
+                      String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                      String(now.getDate()).padStart(2, '0') + 'T' +
+                      String(now.getHours()).padStart(2, '0') + ':00'
+
+        for (var j = 0; j < temps.length; j++) {
+          if (temps[j].datetime && temps[j].datetime.includes(targetHourStr)) {
+            currentHourIndex = j
+            break
+          }
+        }
+
+        // If no exact match, start from the first entry
+        if (currentHourIndex === -1) {
+          currentHourIndex = 0
+        }
+
+        // --- Build forecast for the next 3 hours from the current time ---
+        var forecast = []
+          for (var i = 1; i < 4; ++i) {
+            var dataIndex = currentHourIndex + i
+
+            // Safety check: ensure we don't go beyond available data
+            if (dataIndex >= temps.length || dataIndex >= skycons.length || dataIndex >= precipProbs.length) {
+              break
+            }
+
+            var hour = temps[dataIndex]
+            var sky = skycons[dataIndex]
+            var precipValue = precipProbs[dataIndex]
+
+            var time = formatHourAMPM(hour.datetime)
+            forecast.push({
+              time: time,
+              high: Math.round(hour.value) + "°",
+              low: Math.round(hour.low) + "°",
+              precip: precipValue + "%",
+              status: sky.value
+            })
+          }
+
+      // Ensure we always have 3 forecast entries (fill with placeholders if needed)
+      while (forecast.length < 3) {
         forecast.push({
-          time: time,
-          high: Math.round(hour.value) + "°",
-          low: Math.round(hour.value) - 1 + "°", // fake it empty
-          status: sky.value
+          time: "--",
+          high: "--°",
+          low: "--°",
+          precip: "--%",
+          status: "CLOUDY"
         })
       }
+
       forecastList = forecast
 
-      updateTime = formatUpdateTime()
+        updateTime = formatUpdateTime()
     } catch (e) {
-      console.log("JSON parse error:", e)
+        console.log("JSON parse error:", e)
     }
-  }
+}
 
   function updateWeather() {
     executable.connectSource(scriptPath)

@@ -6,12 +6,12 @@
         "Icon": "weather-clear",
         "Category": "Weather",
         "Version": "0.1",
-        "Website": "https://github.com/diredocks/plasma-applet-weather7",
-        "BugReportUrl": "https://github.com/diredocks/plasma-applet-weather7/issues",
+        "Website": "https://github.com/elegantMarigolds/plasma-applet-weather7-openmeteo",
+        "BugReportUrl": "https://github.com/elegantMarigolds/plasma-applet-weather7-openmeteo",
         "Authors": [
             {
-                "Name": "Diredocks",
-                "Email": "napking@163.com"
+                "Name": "Elizabeth C",
+                "Email": "carpenter.mary@protonmail.com"
             }
         ]
     },
