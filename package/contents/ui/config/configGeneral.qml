@@ -53,7 +53,7 @@ KCM.SimpleKCM {
       value: plasmoid.configuration.Interval
       Kirigami.FormData.label: i18nc("@label:spinbox", "Update every:")
 
-      from: 30
+      from: 1
       to: 3600
       editable: true
 
