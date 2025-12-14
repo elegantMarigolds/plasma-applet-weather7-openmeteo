@@ -83,7 +83,7 @@ Item {
   property string currentRange: "H: --° L: --°"
   property string currentStatus: "UNKOWN"
   property string currentCity: Plasmoid.configuration.City
-  property string weatherSource: "Wealth Beyond Measure, Muthsera"
+  property string weatherSource: "OpenMateo"
   property string updateTime: i18nc("Updated at --:--", "Updated at --:--")
   property var forecastList: [
     { time: "-- AM", high: "--°", low: "--°", status: "CLOUDY" },
