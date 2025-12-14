@@ -8,8 +8,8 @@ import time
 from datetime import datetime
 
 # ===== CONFIGURE HERE =====
-LATITUDE = #40.541290
-LONGITUDE = #-40.434769
+LATITUDE = 37.541290
+LONGITUDE = -77.434769
 USE_FAHRENHEIT = True  # Set to False for Celsius
 # ==========================
 

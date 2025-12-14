@@ -33,7 +33,6 @@ Item {
     "CLEAR_NIGHT": Qt.resolvedUrl("../images/skycons/clearNight.svg"),
     "PARTLY_CLOUDY_DAY": Qt.resolvedUrl("../images/skycons/cloudy.svg"),
     "PARTLY_CLOUDY_NIGHT": Qt.resolvedUrl("../images/skycons/cloudyNight.svg"),
-    "PARTLY_CLOUDY_NIGHT": Qt.resolvedUrl("../images/skycons/cloudy.svg"),
     "CLOUDY": Qt.resolvedUrl("../images/skycons/cloudy.svg"),
     "OVERCAST": Qt.resolvedUrl("../images/skycons/overcast.svg"),
     "LIGHT_HAZE": Qt.resolvedUrl("../images/skycons/haze.svg"),
@@ -83,7 +82,7 @@ Item {
   property string currentRange: "H: --° L: --°"
   property string currentStatus: "UNKOWN"
   property string currentCity: Plasmoid.configuration.City
-  property string weatherSource: "OpenMateo"
+  property string weatherSource: "Wealth Beyond Measure, Muthsera"
   property string updateTime: i18nc("Updated at --:--", "Updated at --:--")
   property var forecastList: [
     { time: "-- AM", high: "--°", low: "--°", status: "CLOUDY" },
@@ -113,12 +112,42 @@ Item {
 
         // Get precipitation chance
         var precipChance = 0
+        var precipEmoji = ""
         if (json.result.realtime.precipitation &&
             json.result.realtime.precipitation.local &&
             json.result.realtime.precipitation.local.probability !== undefined) {
             precipChance = Math.round(json.result.realtime.precipitation.local.probability)
         }
-        precipitationChance = precipChance + "% chance of rain"
+
+
+        // Detailed emoji logic
+        if (precipChance >= 50) {
+          // Heavy precipitation
+            var isSnow = currentStatus.includes("SNOW")
+            var isRain = currentStatus.includes("RAIN")
+            if (isSnow) precipEmoji = "🌨️ "  // Heavy snow
+            else if (isRain) precipEmoji = "⛈️ "  // Storm
+            else precipEmoji = "🌧️ "  // Generic heavy precipitation
+        } else if (precipChance >= 20) {
+          // Moderate precipitation
+          var isSnow = currentStatus.includes("SNOW")
+          if (isSnow) precipEmoji = "❄️ "  // Light snow
+          else precipEmoji = "🌦️ "  // Cloud with rain
+        } else {
+          // Low or no precipitation
+          var isDay = !currentStatus.includes("NIGHT")
+          var isCloudy = currentStatus.includes("CLOUDY") || currentStatus.includes("OVERCAST")
+
+          if (isCloudy) {
+            precipEmoji = "☁️ "
+          } else if (isDay) {
+              precipEmoji = "☀️ "
+          } else {
+            precipEmoji = "🌙 "
+          }
+        }
+
+        precipitationChance = precipEmoji + precipChance + "% chance"
 
         var daily = json.result.daily.temperature[0]
         currentRange = "H: " + Math.round(daily.max) + "° L:" + Math.round(daily.min) + "°"
@@ -151,36 +180,44 @@ Item {
 
         // --- Build forecast for the next 3 hours from the current time ---
         var forecast = []
-          for (var i = 1; i < 4; ++i) {
-            var dataIndex = currentHourIndex + i
+        var hoursToShow = 3
+        var hoursAdded = 0
+        var dataIndex = currentHourIndex
 
-            // Safety check: ensure we don't go beyond available data
-            if (dataIndex >= temps.length || dataIndex >= skycons.length || dataIndex >= precipProbs.length) {
-              break
-            }
+        // Start from the NEXT hour (skip current hour)
+        while (hoursAdded < hoursToShow) {
+          // Move to next hour
+          dataIndex++
 
-            var hour = temps[dataIndex]
-            var sky = skycons[dataIndex]
-            var precipValue = precipProbs[dataIndex]
-
-            var time = formatHourAMPM(hour.datetime)
-            forecast.push({
-              time: time,
-              high: Math.round(hour.value) + "°",
-              low: Math.round(hour.low) + "°",
-              precip: precipValue + "%",
-              status: sky.value
-            })
+          // If we've gone past available data, break
+          if (dataIndex >= temps.length || dataIndex >= skycons.length || dataIndex >= precipProbs.length) {
+            break
           }
+
+          var hour = temps[dataIndex]
+          var sky = skycons[dataIndex]
+          var precipValue = precipProbs[dataIndex]
+
+          var time = formatHourAMPM(hour.datetime)
+          forecast.push({
+            time: time,
+            high: Math.round(hour.value) + "°",
+            low: Math.round(hour.low) + "°",
+            precip: precipEmoji + precipValue + "%",
+            status: sky.value
+          })
+
+          hoursAdded++
+        }
 
       // Ensure we always have 3 forecast entries (fill with placeholders if needed)
       while (forecast.length < 3) {
         forecast.push({
-          time: "--",
-          high: "--°",
-          low: "--°",
-          precip: "--%",
-          status: "CLOUDY"
+          time: "N/A",
+          high: "N/A°",
+          low: "N/A°",
+          precip: "N/A%",
+          status: "N/A"
         })
       }
 

@@ -12,15 +12,15 @@
     </entry>
     <entry name="Command" type="String">
       <label>Weather Script/Command</label>
-      <default>curl "https://api.caiyunapp.com/v2.6/"</default>
+      <default>weather.py</default>
     </entry>
     <entry name="City" type="String">
       <label>City Name</label>
-      <default>Beijing, China</default>
+      <default>Puppydog City</default>
     </entry>
     <entry name="Interval" type="Int">
       <label>Interval (in Minute)</label>
-      <default>30</default>
+      <default>5</default>
     </entry>
   </group>
 </kcfg>
